@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <klib.h>
 #include <vga_textmode.h>
+#include <mm.h>
 
 char *kstrcpy(char *dest, char *src) {
     size_t i = 0;
@@ -169,6 +170,45 @@ void kprint(int type, char *fmt, ...) {
 
 out:
     return;
+}
+
+struct alloc_metadata_t {
+    size_t pages;
+    size_t size;
+};
+
+void *kalloc(size_t size) {
+    size_t page_count = size / PAGE_SIZE;
+    char *ptr;
+    size_t i;
+    struct alloc_metadata_t *metadata;
+
+    if (size % PAGE_SIZE) page_count++;
+
+    ptr = pmm_alloc(page_count + 1);
+
+    if (!ptr) {
+        return (void *)0;
+    }
+
+    metadata = (struct alloc_metadata_t *)ptr;
+    ptr += PAGE_SIZE;
+
+    metadata->pages = page_count;
+    metadata->size = size;
+
+    // Zero pages.
+    for (i = 0; i < (page_count * PAGE_SIZE); i++) {
+        ptr[i] = 0;
+    }
+
+    return (void *)ptr;
+}
+
+void kfree(void *ptr) {
+    struct alloc_metadata_t *metadata = (struct alloc_metadata_t *)((size_t)ptr - PAGE_SIZE);
+
+    pmm_free((void *)metadata, metadata->pages + 1);
 }
 
 void *kmemcpy(void *dest, void *src, size_t count) {

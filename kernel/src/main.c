@@ -2,6 +2,7 @@
 #include <vga_textmode.h>
 #include <klib.h>
 #include <e820.h>
+#include <mm.h>
 
 void kmain(void) {
     init_vga_textmode();
@@ -9,6 +10,8 @@ void kmain(void) {
     kprint(KPRN_INFO, "uks: Kernel booted");
 
     init_e820();
+    init_pmm();
+    init_vmm();
 
     for (;;) {
         #asm

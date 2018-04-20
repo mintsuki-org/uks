@@ -136,12 +136,24 @@ _main:
     or eax, 1 << 31
     mov cr0, eax
 
-    call _kmain
+    mov eax, _kmain
+    call eax
 
   .halt:
     cli
     hlt
     jmp .halt
+
+align 4
+multiboot_header:
+    .magic dd 0x1BADB002
+    .flags dd 0x00010000
+    .checksum dd -(0x1BADB002 + 0x00010000)
+    .header_addr dd multiboot_header
+    .load_addr dd 0x100000
+    .load_end_addr dd __edata
+    .bss_end_addr dd __end
+    .entry_addr dd _main
 
 section .data
 
@@ -150,13 +162,11 @@ e820_entry:
     times 24 db 0
 
 align 16
-
 rm_idt:
     dw 0x3ff
     dd 0
 
 align 16
-
 gdt_ptr:
     dw .gdt_end - .gdt_start - 1  ; GDT size
     dd .gdt_start                 ; GDT start
@@ -225,14 +235,3 @@ align 16
     db 0x00             ; Base (high 8 bits)
 
 .gdt_end:
-
-align 4
-multiboot_header:
-    .magic dd 0x1BADB002
-    .flags dd 0x00010000
-    .checksum dd -(0x1BADB002 + 0x00010000)
-    .header_addr dd multiboot_header
-    .load_addr dd 0x100000
-    .load_end_addr dd __edata
-    .bss_end_addr dd __end
-    .entry_addr dd _main
