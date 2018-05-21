@@ -7,7 +7,11 @@ global _main
 global _kernel_pagemap
 global _e820_map
 
-_kernel_pagemap equ 0x800000
+kernel_pagemap equ 0x800000
+
+section .data
+
+_kernel_pagemap: dd kernel_pagemap
 
 section .bss
 
@@ -106,13 +110,13 @@ _main:
 
     ; zero out page tables
     xor eax, eax
-    mov edi, _kernel_pagemap
+    mov edi, kernel_pagemap
     mov ecx, 1024 * (8 + 1)
     rep stosd
 
     ; set up page tables
     mov eax, 0x03
-    mov edi, (_kernel_pagemap + 4096)
+    mov edi, (kernel_pagemap + 4096)
     mov ecx, 1024 * 8
 .loop0:
     stosd
@@ -120,16 +124,16 @@ _main:
     loop .loop0
 
     ; set up page directories
-    mov eax, (_kernel_pagemap + 4096)
+    mov eax, (kernel_pagemap + 4096)
     or eax, 0x03
-    mov edi, _kernel_pagemap
+    mov edi, kernel_pagemap
     mov ecx, 8
 .loop1:
     stosd
     add eax, 0x1000
     loop .loop1
 
-    mov eax, _kernel_pagemap
+    mov eax, kernel_pagemap
     mov cr3, eax
 
     mov eax, cr0

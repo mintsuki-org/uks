@@ -10,7 +10,7 @@
 
 typedef uint32_t pt_entry_t;
 
-extern pt_entry_t kernel_pagemap;
+extern pt_entry_t *kernel_pagemap;
 
 void *pmm_alloc(size_t);
 void pmm_free(void *, size_t);

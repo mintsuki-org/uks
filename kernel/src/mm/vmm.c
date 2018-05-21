@@ -79,8 +79,6 @@ int remap_page(pt_entry_t *pd, size_t virt_addr, size_t flags) {
 }
 
 /* Identity map the first 4GiB of memory, this saves issues with MMIO hardware < 4GiB later on */
-/* Then use the e820 to map all the available memory (saves on allocation time and it's easier) */
-/* The latter only applies to x86_64 */
 void init_vmm(void) {
     size_t i;
 
@@ -88,7 +86,7 @@ void init_vmm(void) {
 
     for (i = 0; i < (0x100000000 / PAGE_SIZE); i++) {
         size_t addr = i * PAGE_SIZE;
-        map_page(&kernel_pagemap, addr, addr, 0x03);
+        map_page(kernel_pagemap, addr, addr, 0x03);
     }
 
     kprint(KPRN_INFO, "vmm: Done");
