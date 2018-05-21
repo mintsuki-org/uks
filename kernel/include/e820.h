@@ -16,6 +16,7 @@ struct e820_entry_t {
 extern uint32_t memory_size;
 extern struct e820_entry_t e820_map[256];
 
+void get_e820(void);
 void init_e820(void);
 
 #endif

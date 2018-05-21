@@ -5,7 +5,6 @@ extern _kmain
 
 global _main
 global _kernel_pagemap
-global _e820_map
 
 kernel_pagemap equ 0x800000
 
@@ -13,83 +12,13 @@ section .data
 
 _kernel_pagemap: dd kernel_pagemap
 
-section .bss
-
-_e820_map: resq 1024
-
 section .text
 
 bits 32
 _main:
-    ; return to real mode to get e820 and stuff
     lgdt [gdt_ptr]
-    lidt [rm_idt]
 
-    jmp 0x28:.pmode16
-  .pmode16:
-    bits 16
-    mov ax, 0x30
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-    mov esp, 0xfff0
-
-    mov eax, cr0
-    and al, 0xfe
-    mov cr0, eax
-
-    jmp 0xffff:(.rm16 - 0x100000 + 0x10)
-  .rm16:
-    mov ax, 0xffff
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-
-    push dword (_e820_map - 0x100000 + 0x10)
-    xor ebx, ebx
-  .e820_loop:
-    mov eax, 0xe820
-    mov ecx, 24
-    mov edx, 0x534d4150
-    mov edi, (e820_entry - 0x100000 + 0x10)
-    int 0x15
-    db 0x73, 0x05   ; jnc
-    jmp 0xffff:(.e820_done_noset - 0x100000 + 0x10)
-    test ebx, ebx
-    db 0x75, 0x05   ; jnz
-    jmp 0xffff:(.e820_done_set - 0x100000 + 0x10)
-    pop edi
-    mov esi, (e820_entry - 0x100000 + 0x10)
-    mov ecx, 24
-    a32 o32 rep movsb
-    push edi
-    jmp 0xffff:(.e820_loop - 0x100000 + 0x10)
-  .e820_done_set:
-    pop edi
-    mov esi, (e820_entry - 0x100000 + 0x10)
-    mov ecx, 24
-    a32 o32 rep movsb
-    jmp 0xffff:(.e820_done - 0x100000 + 0x10)
-  .e820_done_noset:
-    pop edi
-    jmp 0xffff:(.e820_done - 0x100000 + 0x10)
-  .e820_done:
-    xor al, al
-    mov ecx, 24
-    a32 o32 rep stosb
-
-    ; return to pmode
-    mov eax, cr0
-    or al, 0x01
-    mov cr0, eax
-
-    push dword 0x08
-    push dword .pmode
-    a32 o32 retf
+    jmp 0x08:.pmode
   .pmode:
     bits 32
     mov ax, 0x10
@@ -160,15 +89,6 @@ multiboot_header:
     .entry_addr dd _main
 
 section .data
-
-align 16
-e820_entry:
-    times 24 db 0
-
-align 16
-rm_idt:
-    dw 0x3ff
-    dd 0
 
 align 16
 gdt_ptr:

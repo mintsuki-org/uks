@@ -27,6 +27,8 @@ static char *e820_type(uint32_t type) {
 void init_e820(void) {
     size_t i;
 
+    get_e820();
+
     /* Print out memory map and find total usable memory. */
     for (i = 0; e820_map[i].type; i++) {
         if (e820_map[i].base_high || e820_map[i].length_high) {
