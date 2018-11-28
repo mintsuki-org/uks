@@ -5,8 +5,8 @@ MAKE = make
 iso:
 	$(MAKE) -C kernel
 	cp kernel/kernel.bin iso/boot/kernel.bin
-	grub-mkrescue -o os.iso iso
+	grub-mkrescue -o uks.iso iso
 
 clean:
 	$(MAKE) clean -C kernel
-	rm -f os.iso
+	rm -f uks.iso

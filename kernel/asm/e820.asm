@@ -1,6 +1,8 @@
 extern real_routine
 
-global _get_e820
+global get_e820
+
+%define kernel_phys_offset 0xffffffffc0000000
 
 section .data
 
@@ -10,23 +12,27 @@ e820_end:
 
 section .text
 
-bits 32
+bits 64
 
-extern _e820_map
+get_e820:
+    ; void get_e820(e820_entry_t *e820_map);
+    push rbx
+    push rbp
+    push r12
+    push r13
+    push r14
+    push r15
 
-_get_e820:
-    push ebx
-    mov ebx, _e820_map
-    push esi
-    push edi
-    push ebp
-
-    mov esi, e820_bin
-    mov ecx, e820_size
+    mov rbx, rdi
+    sub rbx, kernel_phys_offset
+    mov rsi, e820_bin
+    mov rcx, e820_size
     call real_routine
 
-    pop ebp
-    pop edi
-    pop esi
-    pop ebx
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbp
+    pop rbx
     ret

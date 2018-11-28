@@ -1,27 +1,32 @@
 org 0x1000
-bits 32
+bits 64
 
 ; Save stack
-mov dword [saved_stack], esp
+mov qword [saved_stack], rsp
 
 ; Save arg for later
 mov dword [arg], ebx
 
-; Save pmode IDT
-sidt [pmode_idt]
+; Save lmode IDT
+sidt [lmode_idt]
 
-; Save pmode GDT
-sgdt [pmode_gdt]
+; Save lmode GDT
+sgdt [lmode_gdt]
 
 ; Load real mode IDT
 lidt [real_idt]
 
 ; save cr3
-mov eax, cr3
+mov rax, cr3
 mov dword [cr3_reg], eax
 
 ; Load 16-bit segments
-jmp 0x28:pmode16
+jmp far dword [ptr16]
+
+ptr16:
+dd pmode16
+dw 0x28
+
 pmode16:
 bits 16
 mov ax, 0x30
@@ -31,10 +36,17 @@ mov ss, ax
 mov fs, ax
 mov gs, ax
 
-; Leave pmode
+; Leave compatibility mode
 mov eax, cr0
-and eax, ~(0x80000001)
+and eax, 01111111111111111111111111111110b
 mov cr0, eax
+
+; leave long mode
+mov ecx, 0xc0000080
+rdmsr
+
+and eax, 0xfffffeff
+wrmsr
 
 ; Load real mode segments
 jmp 0x0000:real_mode
@@ -52,7 +64,9 @@ mov esp, 0xFFF0
 mov ebx, dword [arg]
 
 ; Call actual routine
+sti
 call 0x8000
+cli
 
 ; Load intermediate bootstrap GDT
 lgdt [gdt_ptr]
@@ -61,15 +75,21 @@ lgdt [gdt_ptr]
 mov eax, dword [cr3_reg]
 mov cr3, eax
 
-; Enter pmode
+mov ecx, 0xc0000080
+rdmsr
+
+or eax, 0x00000100
+wrmsr
+
+; Enter long mode
 mov eax, cr0
 or eax, 0x80000001
 mov cr0, eax
 
-; Load pmode segments
-jmp 0x08:.pmode
-.pmode:
-bits 32
+; Load long mode segments
+jmp 0x08:.lmode
+.lmode:
+bits 64
 mov ax, 0x10
 mov ds, ax
 mov es, ax
@@ -77,14 +97,14 @@ mov fs, ax
 mov gs, ax
 mov ss, ax
 
-; Load pmode IDT
-lidt [pmode_idt]
+; Load lmode IDT
+lidt [lmode_idt]
 
-; Load pmode GDT
-lgdt [pmode_gdt]
+; Load lmode GDT
+lgdt [lmode_gdt]
 
 ; Restore stack
-mov esp, dword [saved_stack]
+mov rsp, qword [saved_stack]
 
 ; Return
 ret
@@ -92,23 +112,23 @@ ret
 data:
 
 align 4
-pmode_idt:
+lmode_idt:
     dw 0
-    dd 0
+    dq 0
 
 align 4
 real_idt:
     dw 0x3FF
-    dd 0
+    dq 0
 
 align 4
-pmode_gdt:
+lmode_gdt:
     dw 0
-    dd 0
+    dq 0
 
 arg dd 0
 cr3_reg dd 0
-saved_stack dd 0
+saved_stack dq 0
 
 align 16
 
@@ -128,21 +148,21 @@ align 16
     db 00000000b        ; Granularity
     db 0x00             ; Base (high 8 bits)
 
-; 32 bit mode kernel
-.kernel_code_32:
-    dw 0xFFFF           ; Limit
+; 64 bit mode kernel
+.kernel_code_64:
+    dw 0x0000           ; Limit
     dw 0x0000           ; Base (low 16 bits)
     db 0x00             ; Base (mid 8 bits)
     db 10011010b        ; Access
-    db 11001111b        ; Granularity
+    db 00100000b        ; Granularity
     db 0x00             ; Base (high 8 bits)
 
-.kernel_data_32:
-    dw 0xFFFF           ; Limit
+.kernel_data:
+    dw 0x0000           ; Limit
     dw 0x0000           ; Base (low 16 bits)
     db 0x00             ; Base (mid 8 bits)
     db 10010010b        ; Access
-    db 11001111b        ; Granularity
+    db 00000000b        ; Granularity
     db 0x00             ; Base (high 8 bits)
 
 .gdt_end:
