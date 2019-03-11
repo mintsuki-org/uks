@@ -8,7 +8,7 @@ REAL_FILES = $(shell find ./real -type f -name '*.real')
 OBJ = $(D_FILES:.d=.o) $(ASM_FILES:.asm=.o)
 BINS = $(REAL_FILES:.real=.bin)
 
-DHARDFLAGS = -mtriple=x86_64-elf -relocation-model=static -code-model=kernel -mattr=-sse,-sse2 -disable-red-zone -betterC -op -I=./src
+DHARDFLAGS = -mtriple=x86_64-elf -relocation-model=static -code-model=kernel -mattr=-sse,-sse2,-ssse3,-sse3 -disable-red-zone -betterC -op -I=./src
 LDHARDFLAGS = -nostdlib -T./linker.ld
 DFLAGS = -O2
 LDFLAGS =

@@ -1,7 +1,7 @@
 /*.tar.bz2
 /*.tar.gz
 /*.img
-/os.iso
+/uks.iso
 /iso/boot/kernel.bin
 /kernel/**/*.o
 /kernel/**/*.bin
